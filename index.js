@@ -22,7 +22,7 @@ app.post('/poeng', (request, response) => {
 		}
 	}
 	let data = JSON.stringify(banning);
-	fs.writeFile('swearstats.json', data, (err) => {  
+	fs.writeFile('swearstats.json', data, (err) => {
 		if (err) throw err;
 		console.log('Data written to file');
 	});
@@ -34,9 +34,9 @@ app.get('/', (request, response) => {
 
 function hentBanning()
 {
-	let rawdata = fs.readFileSync('swearstats.json');  
-	let data = JSON.parse(rawdata);  
+	let rawdata = fs.readFileSync('swearstats.json');
+	let data = JSON.parse(rawdata);
 	return data;
 }
 
-app.listen(3000);
+app.listen(80);
