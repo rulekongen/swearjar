@@ -1,13 +1,31 @@
-<h2>SWEAR JAR!<h2>
-{{#if data}}
-<ul>
-    {{#each data}}
-        <li>{{this.name}} - {{this.antall}} <button onclick="poeng('{{this.name}}')">1 poeng</button></li>
-    {{/each}}
-</ul>
-{{else}}
-    <p><em>Ingen data</em></p>
-{{/if}}
+<div class="container">
+  <div class="card mt-2">
+    <div class="card-body">
+      <h2>Scoreboard</h2>
+      {{#if data}}
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Score</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each data}}
+              <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.antall}}</td>
+                <td><button class="btn-primary btn" onclick="poeng('{{this.name}}')">1 point</button></td>
+          {{/each}}
+        </tbody>
+      </table>
+      {{else}}
+          <p><em>No data</em></p>
+      {{/if}}
+    </div>
+  </div>
+</div>
 
 <script>
 function poeng(pNavn) {
@@ -17,6 +35,6 @@ function poeng(pNavn) {
 	location.reload();
   };
   xhttp.open("POST", "/poeng?Navn=" + pNavn, true);
-  xhttp.send();	
+  xhttp.send();
 }
 </script>
