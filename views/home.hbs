@@ -1,0 +1,22 @@
+<h2>SWEAR JAR!<h2>
+{{#if data}}
+<ul>
+    {{#each data}}
+        <li>{{this.name}} - {{this.antall}} <button onclick="poeng('{{this.name}}')">1 poeng</button></li>
+    {{/each}}
+</ul>
+{{else}}
+    <p><em>Ingen data</em></p>
+{{/if}}
+
+<script>
+function poeng(pNavn) {
+	console.log(pNavn);
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+	location.reload();
+  };
+  xhttp.open("POST", "/poeng?Navn=" + pNavn, true);
+  xhttp.send();	
+}
+</script>
