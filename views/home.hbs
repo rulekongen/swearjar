@@ -84,7 +84,7 @@ function setUsername() {
   while(!gUsername) {
     gUsername = prompt("Please enter your name");
   }
-  document.cookie = "username=" + username + ";";
+  document.cookie = "username=" + gUsername + ";";
   location.reload();
 }
 
@@ -93,7 +93,7 @@ function getUsername() {
     var myCookie = getCookie("username");
 
     if (myCookie == null) {
-
+      setUsername();
     }
     else {
       gUsername = myCookie;
