@@ -1,22 +1,22 @@
 <div class="container">
   <div class="card mt-2">
     <div class="card-body">
-      <h2>Scoreboard</h2>
+      <h2>Scoreboard (<span onload="getUsername()" id="username">N/A</span> <button class="btn btn-secondary btn-small" onclick="setUsername()">Edit</button>)</h2>
       {{#if data}}
       <table class="table">
         <thead>
           <tr>
             <th scope="col">Name</th>
             <th scope="col">Score</th>
-            <th scope="col"></th>
+            <th scope="col" colspan="90"></th>
           </tr>
         </thead>
         <tbody>
           {{#each data}}
               <tr>
                 <td>{{this.name}}</td>
-                <td>{{this.antall}}</td>
-                <td><button class="btn-primary btn" onclick="poeng('{{this.name}}')">1 point</button></td>
+                <td>{{this.entries.length}}</td>
+                <td><button class="btn-primary btn poeng" onclick="addPoint('{{this.name}}')">1 point</button></td>
           {{/each}}
         </tbody>
       </table>
@@ -28,13 +28,80 @@
 </div>
 
 <script>
-function poeng(pNavn) {
-	console.log(pNavn);
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-	location.reload();
-  };
-  xhttp.open("POST", "/poeng?Navn=" + pNavn, true);
-  xhttp.send();
+function addPoint(pName) {
+  vWord = prompt("What word was used?");
+  while(!vWord) {
+    vWord = prompt("What word was used?");
+  }
+  if(gUsername) {
+    post({name: pName, username: gUsername, word: vWord}, "/addpoint");
+  } else {
+    alert("Could not determine username");
+  }
+}
+
+function post(pContent, pUrl, pCallback) {
+  $('.poeng').attr("disabled", "disabled");
+  $.ajax
+  ({
+    url:pUrl,
+    data: pContent,
+    type: 'POST',
+    success: function(rData)
+    {
+      location.reload();
+    },
+    error: function(xhr, ajaxOptions, thrownError)
+    {
+      console.log(JSON.parse(xhr.responseText));
+    }
+  });
+}
+
+var gUsername = null;
+
+function getCookie(name) {
+    var dc = document.cookie;
+    var prefix = name + "=";
+    var begin = dc.indexOf("; " + prefix);
+    if (begin == -1) {
+        begin = dc.indexOf(prefix);
+        if (begin != 0) return null;
+    }
+    else
+    {
+        begin += 2;
+        var end = document.cookie.indexOf(";", begin);
+        if (end == -1) {
+        end = dc.length;
+        }
+    }
+    return decodeURI(dc.substring(begin + prefix.length, end));
+}
+
+function setUsername() {
+  gUsername = prompt("Please enter your name");
+  while(!gUsername) {
+    gUsername = prompt("Please enter your name");
+  }
+  document.cookie = "username=" + username + ";";
+  location.reload();
+}
+
+function getUsername() {
+  console.log("watr")
+    var myCookie = getCookie("username");
+
+    if (myCookie == null) {
+
+    }
+    else {
+      gUsername = myCookie;
+      $('#username').html(gUsername);
+    }
+}
+
+window.onload = function(){
+   getUsername()
 }
 </script>

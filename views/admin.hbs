@@ -1,0 +1,128 @@
+<div class="container">
+  <div class="card mt-2">
+    <div class="card-body">
+      <h2>Admin (<span id="username">N/A</span> <button class="btn btn-secondary btn-small" onclick="setUsername()">Edit</button>)</h2>
+
+      <label for="addPerson">Add new:</label>
+      <input id="addPerson" class="form-control">
+      <button class="btn btn-primary my-1" onclick="addPerson(this)">Add person</button>
+      {{#if data}}
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Score</th>
+            <th scope="col" colspan="3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each data}}
+              <tr>
+                <td>{{this.name}}</td>
+                <td>{{this.entries.length}}</td>
+                <td><button class="btn-primary btn btn poeng" onclick="addPoint('{{this.name}}')">1 point</button></td>
+                <td><button class="btn-primary btn poeng" onclick="removePoint('{{this.name}}')">-1 point</button></td>
+                <td><button class="btn-primary btn poeng" onclick="removePerson('{{this.name}}')">delete</button></td>
+          {{/each}}
+        </tbody>
+      </table>
+      {{else}}
+          <p><em>No data</em></p>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script>
+function addPoint(pName) {
+  vWord = prompt("What word was used?");
+  while(!vWord) {
+    vWord = prompt("What word was used?");
+  }
+  if(gUsername) {
+    post({name: pName, username: gUsername, word: vWord}, "/addpoint");
+  } else {
+    alert("Could not determine username");
+  }
+
+}
+
+function removePoint(pName) {
+  post({name: pName}, "/removepoint");
+}
+
+function removePerson(pName) {
+  post({name: pName}, "/removeperson");
+}
+
+function addPerson() {
+  let vName = $('#addPerson').val();
+  if (vName) {
+    post({name: vName}, '/addperson');
+  }
+}
+
+function post(pContent, pUrl, pCallback) {
+  $('.poeng').attr("disabled", "disabled");
+  $.ajax
+  ({
+    url:pUrl,
+    data: pContent,
+    type: 'POST',
+    success: function(rData)
+    {
+      location.reload();
+    },
+    error: function(xhr, ajaxOptions, thrownError)
+    {
+      console.log(JSON.parse(xhr.responseText));
+    }
+  });
+}
+
+var gUsername = null;
+
+function getCookie(name) {
+    var dc = document.cookie;
+    var prefix = name + "=";
+    var begin = dc.indexOf("; " + prefix);
+    if (begin == -1) {
+        begin = dc.indexOf(prefix);
+        if (begin != 0) return null;
+    }
+    else
+    {
+        begin += 2;
+        var end = document.cookie.indexOf(";", begin);
+        if (end == -1) {
+        end = dc.length;
+        }
+    }
+    return decodeURI(dc.substring(begin + prefix.length, end));
+}
+
+function setUsername() {
+  gUsername = prompt("Please enter your name");
+  while(!gUsername) {
+    gUsername = prompt("Please enter your name");
+  }
+  document.cookie = "username=" + username + ";";
+  location.reload();
+}
+
+function getUsername() {
+    var myCookie = getCookie("username");
+
+    if (myCookie == null) {
+
+    }
+    else {
+      gUsername = myCookie;
+      $('#username').html(gUsername);
+    }
+}
+
+window.onload = function(){
+   getUsername()
+}
+</script>
