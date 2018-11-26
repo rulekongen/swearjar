@@ -52,6 +52,11 @@ app.post('/addperson', (request, response) => {
   response.send("Success")
 });
 
+app.get('/getswears', (request, response) => {
+  let swears = getSwears();
+  response.send(swears);
+});
+
 app.post('/removeperson', (request, response) => {
   let swears = getSwears();
   for(var i = 0; i < swears.length; i++) {
@@ -68,14 +73,20 @@ app.get('/admin', (request, response) => {
 })
 
 app.get('/', (request, response) => {
-	response.render('home', {data: getSwears()})
+  let vData = getSwears();
+	response.render('home', {rawdata: vData, data: JSON.stringify(vData)});
 });
 
 function getSwears()
 {
-	let rawdata = fs.readFileSync('swearstats.json');
-	let data = JSON.parse(rawdata);
-	return data;
+  if (fs.existsSync('swearstats.json')) {
+    let rawdata = fs.readFileSync('swearstats.json');
+  	let data = JSON.parse(rawdata);
+    if(data) return data;
+  }
+
+  return [];
+
 }
 
 function setSwears(pData) {
