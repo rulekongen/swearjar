@@ -1,0 +1,259 @@
+{%head%}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<title>SWEAR JAR!</title>
+{%menu%}
+<div class="container-fluid pt-2">
+  <div class="row">
+    {%sidemenu%}
+    <div class="card col-sm-12 col-md-8 col-lg-8 my-1">
+      <div class="card-body">
+        <button class="btn btn-default btn-small mb-2" onclick="toggleStats()">Show word statistic (Not for the faint of heart)</button>
+        <div id="chartcontainer">
+          <div id="wordscontainer" style="min-width: 310px; height: 400px; margin: 0 auto" hidden></div>
+          <div id="monthlywordscontainer" style="min-width: 310px; height: 300px; margin: 0 auto"></div>
+          <div id="snitchescontainer" style="min-width: 310px; height: 300px; margin: 0 auto"></div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(window).resize(function() {
+    sidebar();
+  });
+  function sidebar() {
+    if ($(window).innerWidth() > 767) {
+      $("#sidebar").show();
+    } else {
+       $("#sidebar").hide();
+    }
+  }
+  sidebar();
+
+  var dsWords, dsWordsNames, dsMonthly;
+
+  function toggleStats() {
+    if(!$('#wordscontainer').is(":visible")) {
+      $('#wordscontainer').attr('hidden', false);
+      $('#wordscontainer').hide(0);
+      $('#wordscontainer').slideDown();
+      loadWordChart();
+    }
+    else {
+      $('#wordscontainer').slideUp();
+    }
+  }
+
+  $(document).ready(function() {
+    dsWords = new dataSource({
+      name: "words",
+      dataFields: ["Word"],
+      view: "aviw_Swearjar_Words",
+      orderBy: "Word",
+      anonymous: true
+    });
+
+    dsWordsNames = new dataSource({
+      name: "wordsNames",
+      dataFields: ["Word", "Name", "Mentions"],
+      view: "aviw_Swearjar_WordsNames",
+      orderBy: "Name, Word",
+      anonymous: true
+    });
+
+    dsWords.getData(function() {
+      dsWordsNames.getData(function() {
+        var vStats = {name: ""}
+        dsWordsNames.data.forEach(function(vRow) {
+          if (vStats.name === vRow.Name) {
+            vStats.data.push(vRow.Mentions);
+          } else {
+            if(vStats.name !== "" && vStats.data.length > 0) gPeopleWords.push(vStats);
+            vName = vRow.Name;
+            vStats = {name: null, data: []};
+            vStats.name = vRow.Name;
+            vStats.data.push(vRow.Mentions);
+          }
+        });
+        loadWordChart();
+      });
+    });
+
+    dsMonthly = new dataSource({
+      name: "monthly",
+      dataFields: ["Period", "Name", "Words", "Snitches"],
+      view: "aviw_Swearjar_MonthlyStats",
+      orderBy: "Name, Period",
+      anonymous: true
+    });
+
+    dsMonthly.getData(function() {
+
+      dsMonthly.data.forEach(function(vRow) {
+        if(!gMonths.includes(vRow.Period)) {
+          gMonths.push(vRow.Period);
+        }
+      });
+
+      var vStats = {name: ""}
+      dsMonthly.data.forEach(function(vRow) {
+        if (vStats.name === vRow.Name) {
+          vStats.data.push(vRow.Snitches);
+        } else {
+          if(vStats.name !== "") gMonthsPeopleSnitches.push(vStats);
+          vName = vRow.Name;
+          vStats = {name: null, data: []};
+          vStats.name = vRow.Name;
+          vStats.data.push(vRow.Snitches);
+        }
+      });
+
+      vStats = {name: ""}
+      dsMonthly.data.forEach(function(vRow) {
+        if (vStats.name === vRow.Name) {
+          vStats.data.push(vRow.Words);
+        } else {
+          if(vStats.name !== "") gMonthsPeopleWords.push(vStats);
+          vName = vRow.Name;
+          vStats = {name: null, data: []};
+          vStats.name = vRow.Name;
+          vStats.data.push(vRow.Words);
+        }
+      });
+
+      loadMonthlySnitchCart();
+      loadMonthlyWordCart();
+    });
+
+  });
+
+  var gPeopleWords = [];
+  function loadWordChart() {
+    gWordsChart = Highcharts.chart('wordscontainer', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'All time word usage'
+        },
+        subtitle: {
+            text: "Where's the soap?"
+        },
+        xAxis: {
+            categories: dsWords.data.map(function(vWord) {return (vWord.Word)})
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Total swear word usage'
+            },
+            stackLabels: {
+                enabled: true,
+                style: {
+                    fontWeight: 'bold',
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
+                }
+            }
+        },
+        legend: {
+            align: 'center',
+            x: 0,
+            verticalAlign: 'bottom',
+            y: 0,
+            floating: false,
+            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
+            borderColor: '#CCC',
+            borderWidth: 1,
+            shadow: false
+        },
+        tooltip: {
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true,
+                    color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
+                }
+            }
+        },
+        series: gPeopleWords
+    });
+  }
+
+  var gMonths = [];
+  var gMonthsPeopleWords = [];
+  var gMonthsPeopleSnitches = [];
+
+  function loadMonthlySnitchCart() {
+    gSnitchesChart = Highcharts.chart('snitchescontainer', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Sniches by month'
+        },
+        subtitle: {
+            text: 'Snitches get stitches'
+        },
+        xAxis: {
+            categories: gMonths
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'snitched in total'
+            }
+        },
+        tooltip: {
+          headerFormat: '<b>{point.x}</b><br/>',
+          pointFormat: '{series.name}: {point.y}'
+        },
+        plotOptions: {
+            column: {
+                pointPadding: 0.2,
+                borderWidth: 0
+            }
+        },
+        series: gMonthsPeopleSnitches
+    });
+  }
+
+  function loadMonthlyWordCart() {
+    gMonthlyWordsChart = Highcharts.chart('monthlywordscontainer', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Words by month'
+        },
+        subtitle: {
+            text: 'Word up, yo!'
+        },
+        xAxis: {
+            categories: gMonths
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'words in total'
+            }
+        },
+        tooltip: {
+          headerFormat: '<b>{point.x}</b><br/>',
+          pointFormat: '{series.name}: {point.y}'
+        },
+        plotOptions: {
+            column: {
+                pointPadding: 0.2,
+                borderWidth: 0
+            }
+        },
+        series: gMonthsPeopleWords
+    });
+  }
+
+</script>
+{%footer%}

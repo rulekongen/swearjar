@@ -1,0 +1,109 @@
+{%head%}
+<title>SWEAR JAR!</title>
+{%menu%}
+{%logindialog%}
+
+<div class="container pt-2">
+  <div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+      <div class="row pt-2" data-source="names">
+        <button class="btn btn-sm" data-new-target="new-name" data-action="new">Add person</button>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <div id="new-name" class="card row mt-2" data-source="names">
+            <div class="card-body">
+              <h6>New person</h6>
+              <div class="row pb-2">
+                <div class="col-12">
+                  <label for="Name">Name</label>
+                  <input id="Name" data-new data-field="Name" type="text" class="form-control  form-control-sm">
+                </div>
+              </div>
+              <div class="row">
+                <div class="form-group col-12 mb-0">
+                  <button id="NewName" class="btn btn-sm" data-action="save">Add</button>
+                  <button class="btn btn-sm" data-action="cancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pb-5 mb-5 row" data-source="names">
+            <div class="card mt-2 mr-2 px-0 col-12" data-detail-target="activities-detail" data-repeat data-active>
+
+              <div class="card-body" data-default>
+                <div class="d-flex">
+                  <span data-field="Name" class="mr-1 h3"></span>
+                  <a class="btn btn-sm ml-auto" data-action="edit"><i class="fas fa-pencil-alt text-muted"></i></a>
+                </div>
+                <span class="text-muted" data-field="Description"></span>
+              </div>
+
+              <div data-edit>
+                <div class="row px-2 py-2">
+                <div class="form-group col-12 pr-0">
+                  <label>Name</label>
+                  <input data-field="Name" type="text" class="form-control form-control-sm">
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-sm" data-action="save">Lagre</button>
+                  <button class="btn btn-sm" data-action="cancel">Avbryt</button>
+                  <button class="btn btn-sm" data-action="delete">Slett</button>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 mt-2">
+          <div class="card">
+            <div class="card-body">
+              <h6>Entries</h6>
+              <div data-source="entries">
+                <div class="mt-2" data-repeat data-active>
+                  <span data-field="Created"></span> <span data-field="Snitch"></span> <span data-field="Word"></span> <a href="javascript:void(0)" data-action="delete"><i class="fas fa-times"></i></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+  var dsNames, dsEntries;
+
+  $( document ).ready(function() {
+    isAuthenticated(function(isAuthenticated) {
+      if(isAuthenticated) {
+        loadData();
+      }
+    });
+    function loadData() {
+      dsNames = new dataSource({
+        name: "names",
+        dataFields: ["Name", "ID"],
+        editFields: ["Name"],
+        view: "atbv_Swearjar_Names",
+        targetTable: "atbl_Swearjar_Names"
+      });
+      dsEntries = new dataSource({
+        name: "entries",
+        dataFields: ["ID", "Name_ID", "Created", "Snitch", "Word"],
+        view: "atbv_Swearjar_Entries",
+        targetTable: "atbl_Swearjar_Entries",
+        orderBy: "Created DESC"
+      });
+
+      dsNames.on("onSelectedRowChanged", function(pRow) {
+        dsEntries.where = "Name_ID = " + pRow.ID;
+        dsEntries.getData();
+      });
+
+      dsNames.getData();
+    }
+  });
+</script>
+{%footer%}

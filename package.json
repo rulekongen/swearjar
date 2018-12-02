@@ -9,9 +9,6 @@
   "author": "Aleksander Birkeland",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.4",
-    "express-handlebars": "^3.0.0",
-    "path": "^0.12.7",
-    "request": "^2.88.0"
+    "knirklib": "git+ssh://git@github.com:rulekongen/knirklib.git#master"
   }
 }
