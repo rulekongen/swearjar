@@ -86,7 +86,7 @@
 
     dsEntries = new dataSource({
       name: "entries",
-      dataFields: ["ID", "Snitch", "Word", "Created", "Name_ID"],
+      dataFields: ["ID", "Snitch", "Word", "Created", "Name_ID", "Snitch_ID"],
       editFields: ["Snitch", "Word", "Name_ID", "Snitch_ID"],
       view: "aviw_Swearjar_Entries",
       targetTable: "atbl_Swearjar_Entries",
@@ -125,13 +125,12 @@
 
   setUsername();
   function setUsername() {
-    console.log("Woot")
-    if (!sessionStorage.firstname) {
+    if (!sessionStorage.firstname || sessionStora.firstname === "undefined") {
       sessionStorage.firstname = prompt("What is your name?");
     }
     if(sessionStorage.firstname) {
       $('#username').text(sessionStorage.firstname);
-    }    
+    }
   }
 
   function addPoint(pName) {
