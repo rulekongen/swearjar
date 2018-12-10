@@ -103,7 +103,7 @@
   });
 
   function snitch() {
-    if(!sessionStorage.firstname) {
+    if(!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
       alert("Could not determine name, please log in or set name to snitch");
       return;
     }
@@ -125,11 +125,13 @@
 
   setUsername();
   function setUsername() {
-    if (!sessionStorage.firstname || sessionStorage.firstname === "undefined") {
+    if (!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
       sessionStorage.firstname = prompt("What is your name?");
     }
-    if(sessionStorage.firstname) {
+    if(sessionStorage.firstname && sessionStorage.firstname !== "undefined" && sessionStorage.firstname !== "null") {
       $('#username').text(sessionStorage.firstname);
+    } else {
+      $('#username').text("No name, no snitching");
     }
   }
 
