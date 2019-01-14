@@ -14,8 +14,8 @@
           <thead>
             <tr>
               <th scope="col">Name</th>
-              <th scope="col">Score in <span id="currentmonth"></span></th>
-              <th scope="col">Total score</th>
+              <th scope="col">Score in <span id="currentmonth"></span> <button class="btn btn-sm sort-current"><i class="fas fa-sort-amount-up"></i></button></th>
+              <th scope="col">Total score <button class="btn btn-sm sort-total"><i class="fas fa-sort-amount-up"></i></button></th>
               <th scope="col" colspan="90"></th>
             </tr>
           </thead>
@@ -80,7 +80,7 @@
       name: "namesAndEntries",
       dataFields: ["ID", "Name", "Score", "ScoreThisMonth"],
       view: "aviw_Swearjar_Scoreboard",
-      orderBy: "Score DESC",
+      orderBy: "ScoreThisMonth DESC",
       anonymous: !gAuthenticated
     });
 
@@ -99,6 +99,16 @@
       dsEntries.getData();
     });
 
+    dsNamesAndEntries.getData();
+  });
+
+  $('.sort-total').click(function() {
+    dsNamesAndEntries.orderBy = "Score DESC";
+    dsNamesAndEntries.getData();
+  });
+
+  $('.sort-current').click(function() {
+    dsNamesAndEntries.orderBy = "ScoreThisMonth DESC";
     dsNamesAndEntries.getData();
   });
 
