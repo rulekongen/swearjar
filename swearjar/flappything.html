@@ -1,0 +1,262 @@
+{%head%}
+<title>Flappy thing</title>
+{%menu%}
+<style>
+#container {
+  width: 1000px;
+  height: 800px;
+  position: relative;
+  background: skyblue;
+}
+#animate {
+  width: 40px;
+  height: 53px;
+  position: absolute;
+  /* background-image: url("https://i.postimg.cc/WpqSWQWp/flappything.png"); */
+  background-image: url("https://i.postimg.cc/qqc1mKJV/arthursmil.png");
+  left: 350px;
+  top:350px;
+}
+
+#ground {
+  width: 1000px;
+  height: 25px;
+  position: absolute;
+  top: 775px;
+  background-color: gray;
+}
+
+.pipe {
+  width: 100px;
+  left: 900px;
+  position: absolute;
+  background-color: green;
+}
+
+
+</style>
+<body>
+
+<div id ="container">
+  <div id="animate"></div>
+  <div id="ground"></div>
+</div>
+
+<div class="pt-2">
+  <button class="btn btn-primary" onclick="myMove()">Start</button>
+  <button class="btn btn-success" onclick="flap()" style="width:100px">Flap!</button>
+  <button class="btn btn-secondary" onclick="showScore()">Highscore</button>
+</div>
+
+<div>Score: <span id="score"></span></div>
+<div id="dead">
+  You lost!
+  <button id="dead-score" class="btn btn-secondary" onclick="saveScore()">Save score</button>
+</div>
+
+<div id="score-modal" class="modal fade pt-5" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Highscore</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul data-source="score">
+          <li data-repeat><strong data-field="Username"></strong> <span data-field="Score"></span></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+gAuthenticated = false;
+isAuthenticated(function(isAuthenticated) {
+  gAuthenticated = isAuthenticated;
+});
+
+$('#dead').hide();
+
+function showScore() {
+  dsScore.getData();
+  $('#score-modal').modal('show');
+}
+
+var dsScore;
+
+setUsername();
+function setUsername() {
+  if (!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
+    sessionStorage.firstname = prompt("What is your name?");
+  }
+  if(sessionStorage.firstname && sessionStorage.firstname !== "undefined" && sessionStorage.firstname !== "null") {
+    $('#username').text(sessionStorage.firstname);
+  } else {
+    $('#username').text("No name, no predicting");
+  }
+}
+
+$(document).ready(function() {
+  dsScore = new dataSource({
+    name: "score",
+    dataFields: ["User_ID", "Username", "Score"],
+    editFields: ["User_ID", "Username", "Score"],
+    view: "atbv_FlappyThing_Highscore",
+    targetTable: "atbl_FlappyThing_Highscore",
+    anonymous: !gAuthenticated,
+    orderBy: "Score DESC"
+  });
+});
+
+function saveScore() {
+  if(!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
+    alert("Could not determine name, please log in or set name to add your score");
+    return;
+  }
+
+  dsScore.addNew();
+  dsScore.selectedRow("Username", sessionStorage.firstname);
+  dsScore.selectedRow("User_ID", sessionStorage.user_id ? sessionStorage.user_id : null);
+  dsScore.selectedRow("Score", score);
+  dsScore.save(function() {
+    dsScore.getData();
+  });
+
+  $('#dead').hide();
+}
+
+$('#animate').hide();
+
+var elem = document.getElementById("animate");
+var ground = document.getElementById("ground");
+
+// var pipepos = 0;
+var pos = 350;
+var score = 0;
+var scoreint = 0;
+var pipeint = 0;
+
+function myMove() {
+  $('#dead').hide();
+  $('#animate').show();
+
+  $('.pipe').each(function(index, element) {
+    let tContainer = document.getElementById("container");
+    tContainer.removeChild(element);
+  });
+
+  addPipe();
+
+  var id = setInterval(frame, 5);
+  // pipepos = 900;
+  pos = 350;
+  function frame() {
+
+    if (pos == 750) {
+      pos = 0
+    }
+    else {
+      pos++;
+      scoreint++;
+      pipeint++;
+
+      var tPipeint = getPipeInterval();
+      if(pipeint >= tPipeint) {
+        pipeint = 0;
+        addPipe();
+      }
+
+      if(scoreint == 10) {
+        scoreint = 0;
+        score++;
+        $('#score').text(score);
+      }
+
+      elem.style.top = pos + "px";
+
+      $('.pipe').each(function(index, element) {
+        var left = $(element).position().left;
+
+        if(collide(elem, element)) {
+          clearInterval(id);
+          dead();
+        }
+
+        if(left > -100) {
+          element.style.left = left - 1 + "px";
+        } else {
+          let tContainer = document.getElementById("container");
+          tContainer.removeChild(element);
+        }
+      });
+    }
+  }
+}
+
+function addPipe() {
+  var pipeHeight = getPipeHeight();
+  var pipeDistance = getPipeDistance();
+
+  var topPipe = document.createElement("div");
+  topPipe.classList.add("pipe");
+  topPipe.style.top = "0px";
+  topPipe.style.height = pipeHeight + "px";
+
+  var bottomPipe = document.createElement("div");
+  bottomPipe.classList.add("pipe");
+  bottomPipe.style.top = pipeHeight + pipeDistance + "px";
+  bottomPipe.style.height = 800 - pipeHeight - pipeDistance + "px";
+
+  $('#container').append(topPipe);
+  $('#container').append(bottomPipe);
+}
+
+function getPipeHeight() {
+  var max = 350;
+  var min = 100;
+  return Math.random() * (max - min) + min;
+}
+
+function getPipeDistance() {
+  var max = 400;
+  var min = 175;
+  return Math.random() * (max - min) + min;
+}
+
+function getPipeInterval() {
+  var max = 500;
+  var min = 300;
+  return Math.random() * (max - min) + min;
+}
+
+function collide(el1, el2) {
+  var rect1 = el1.getBoundingClientRect();
+  var rect2 = el2.getBoundingClientRect();
+
+  return !(
+    rect1.top > rect2.bottom ||
+    rect1.right < rect2.left ||
+    rect1.bottom < rect2.top ||
+    rect1.left > rect2.right
+  );
+}
+
+$('#dead').hide();
+function dead() {
+  $('#dead').show();
+  $('#dead-score').show();
+}
+
+function flap() {
+  pos -= 80;
+  gravity = 0;
+}
+</script>
+{%footer%}
