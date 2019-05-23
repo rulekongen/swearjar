@@ -1,0 +1,215 @@
+{%head%}
+<title>What's for lunch?</title>
+{%menu%}
+<div class="container-fluid pt-2">
+  <div class="row">
+    {%sidemenu%}
+    <div class="card col-sm-12 col-md-8 col-lg-8 my-1">
+      <div class="card-body" data-source="namesAndEntries">
+        <span>
+          <span class="h3">What's for lunch this friday (<span id="currentweek"></span>)?</span>
+          <span style="float: right;" class="small">(<span onload="getUsername()" id="username" class="small">No name, no snitching</span> <a class="small" href="javascript:void(0)" onclick="setUsername()">Set name</a>)</span>
+        </span>
+        <hr class="my-0">
+        <div>
+          <button class="btn btn-primary my-2" onclick="predict('Pølser')">Pølser</button>
+          <button class="btn btn-primary my-2" onclick="predict('Lasagne')">Lasagne</button>
+          <button class="btn btn-primary my-2" onclick="predict('Pizza')">Pizza</button>
+          <button class="btn btn-primary my-2" onclick="predict('Taco')">Taco</button>
+          <button class="btn btn-primary my-2" onclick="predict('Babb')">Babb!</button>
+          <button class="btn btn-primary my-2" onclick="predict('Burger')">Burger</button>
+          <button class="btn btn-primary my-2" onclick="predict('Annet')">Annet</button>
+          <button class="btn btn-secondary " id="report-lunch" onclick="reportLunch()">Set lunch this week</button>
+        </div>
+        <div class="text-muted mb-2">
+          <i>Be certain, your prediction cannot be changed!</i>
+        </div>
+
+        <table class="table" >
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Prediction</th>
+              <th scope="col">Winner</th>
+            </tr>
+          </thead>
+          <tbody>
+                <tr data-repeat data-active>
+                  <td><span data-field="Username"></span></td>
+                  <td><a href="javascript:void(0)" onclick="showLog()" data-field="Lunch"></a></td>
+                  <td><span data-field="WinnerThisPeriod"></span></td>
+                </tr>
+          </tbody>
+        </table>
+    </div>
+  </div>
+</div>
+
+<div id="lunch-modal" class="modal fade pt-5" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Predictions by <span data-source="entries" data-field="Username"></span></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul data-source="entries">
+          <li data-repeat><strong>Period:</strong> <span data-field="Period"></span> <strong>Prediction: </strong> <span data-field="Lunch"></span> <strong>Winner: </strong><span data-field="WinnerThisPeriod"></span></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  gAuthenticated = false;
+  isAuthenticated(function(isAuthenticated) {
+    gAuthenticated = isAuthenticated;
+  });
+
+  $(window).resize(function() {
+    sidebar();
+  });
+  function sidebar() {
+    if ($(window).innerWidth() > 767) {
+      $("#sidemenu-items").show();
+    } else {
+       $("#sidemenu-items").hide();
+    }
+  }
+  sidebar();
+
+  var dsNamesAndEntries, dsEntries, dsLunch, currentWeek = new XDate().toString("yyyy-ww");
+
+  $(document).ready(function() {
+    if (gAuthenticated) {
+      $('#report-lunch').fadeIn();
+    }
+    else {
+      $('#report-lunch').hide();
+    }
+
+
+
+    $('#currentweek').text(currentWeek);
+
+    dsNamesAndEntries = new dataSource({
+      name: "namesAndEntries",
+      dataFields: ["User_ID", "Username", "Period", "Lunch", "WinnerThisPeriod"],
+      view: "aviw_LunchGuess_Scoreboard",
+      orderBy: "WinnerThisPeriod DESC",
+      anonymous: !gAuthenticated,
+      where: "Period = '" + currentWeek + "'"
+    });
+
+    dsEntries = new dataSource({
+      name: "entries",
+      dataFields: ["User_ID", "Username", "Lunch", "Period", "WinnerThisPeriod"],
+      editFields: ["User_ID", "Username", "Lunch", "Period"],
+      view: "aviw_LunchGuess_Guesses",
+      targetTable: "atbl_LunchGuess_Guesses",
+      orderBy: "Created DESC",
+      anonymous: !gAuthenticated
+    });
+
+    dsLunch = new dataSource({
+      name: "lunch",
+      dataFields: ["Period", "Lunch"],
+      editFields: ["Period", "Lunch"],
+      view: "atbv_LunchGuess_Lunches",
+      targetTable: "atbv_LunchGuess_Lunches",
+      anonymous: !gAuthenticated,
+      where: "Period = '" + currentWeek + "'"
+    });
+
+    dsNamesAndEntries.on("onSelectedRowChanged", function(pRow) {
+      dsEntries.where = "Username = '" + pRow.Username + "'";
+      dsEntries.getData();
+    });
+
+    dsNamesAndEntries.getData();
+    dsLunch.getData();
+  });
+
+  $('.sort-total').click(function() {
+    dsNamesAndEntries.orderBy = "Score DESC";
+    dsNamesAndEntries.getData();
+  });
+
+  $('.sort-current').click(function() {
+    dsNamesAndEntries.orderBy = "ScoreThisMonth DESC";
+    dsNamesAndEntries.getData();
+  });
+
+  function predict(pPrediction) {
+    if(!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
+      alert("Could not determine name, please log in or set name to add a prediction");
+      return;
+    }
+
+    vLunch = pPrediction;
+    if(vLunch) {
+      dsEntries.addNew();
+      dsEntries.selectedRow("Username", sessionStorage.firstname);
+      dsEntries.selectedRow("User_ID", sessionStorage.user_id ? sessionStorage.user_id : null);
+      dsEntries.selectedRow("Lunch", vLunch);
+      dsEntries.selectedRow("Period", currentWeek);
+      dsEntries.save(function() {
+        dsNamesAndEntries.getData();
+      });
+    } else {
+      if(!vWord) alert("No prediction provided");
+    }
+  }
+
+  function reportLunch() {
+    if(!gAuthenticated) {
+      alert("You must log in to report the lunch");
+      return
+    }
+
+    vLunch = prompt("What was for lunch this week?");
+    if (vLunch) {
+      dsLunch.addNew()
+      dsLunch.selectedRow("Period", currentWeek);
+      dsLunch.selectedRow("Lunch", vLunch);
+      dsLunch.save(function() {
+        dsLunch.getData();
+        dsNamesAndEntries.getData();
+      })
+    }
+  }
+
+  setUsername();
+  function setUsername() {
+    if (!sessionStorage.firstname || sessionStorage.firstname === "undefined" || sessionStorage.firstname === "null") {
+      sessionStorage.firstname = prompt("What is your name?");
+    }
+    if(sessionStorage.firstname && sessionStorage.firstname !== "undefined" && sessionStorage.firstname !== "null") {
+      $('#username').text(sessionStorage.firstname);
+    } else {
+      $('#username').text("No name, no predicting");
+    }
+  }
+
+  // function addPoint(pName) {
+  //   vWord = prompt("What word was used?");
+  //   if(gUsername && vWord) {
+  //     post({name: pName, username: gUsername, word: vWord}, "/addpoint");
+  //   } else {
+  //     if(!gUsername) alert("Could not determine username");
+  //     if(!vWord) alert("No word provided, will not be scored");
+  //   }
+  // }
+
+  function showLog() {
+     $('#lunch-modal').modal('show');
+  }
+
+</script>
+{%footer%}
