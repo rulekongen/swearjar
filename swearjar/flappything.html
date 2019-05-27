@@ -8,6 +8,21 @@
   position: relative;
   background: skyblue;
 }
+
+#sky {
+  width: 1000px;
+  height: 200px;
+  top: -200px;
+  position:absolute;
+}
+
+#leftborder {
+  height:800px;
+  width:10px;
+  position: absolute;
+  left: -10px;
+}
+
 #animate {
   width: 40px;
   height: 53px;
@@ -16,9 +31,11 @@
   background-image: url("https://i.postimg.cc/qqc1mKJV/arthursmil.png");
   left: 350px;
   top:350px;
+  /* border:1px solid black; */
 }
 
 #ground {
+  left: 0px;
   width: 1000px;
   height: 25px;
   position: absolute;
@@ -33,28 +50,63 @@
   background-color: green;
 }
 
+.gate {
+  top: 0px;
+  width: 1px;
+  height:800px;
+  left: 1000px;
+  position: absolute;
+  /* border:1px solid black; */
+}
+
+#menu {
+  width:200px;
+  height: 300px;
+  top: 200px;
+  left:400px;
+  position: absolute;
+  /* border:1px solid black; */
+  z-index: 99999999;
+}
+
+.score {
+  top: 50px;
+  left: 490px;
+  position: absolute;
+  z-index: 99999999;
+  color: white;
+}
+
 
 </style>
 <body>
 
-<div id ="container">
+<div class="container" id ="container" unselectable="on" onselectstart="return false;">
+  <div id="sky"></div>
+  <div id="leftborder"></div>
+  <div id="score" class="score h1">0</div>
+  <div id="menu">
+    <button class="btn btn-success col-12" onclick="myMove()">Start</button>
+    <button class="btn btn-secondary col-12 mt-2" onclick="showScore()">Highscore</button>
+
+    <div class="dead text-center pt-3">
+      <span class="h3" style="color:white;">You crashed!</span>
+      <button id="dead-score" class="btn btn-primary col-12" onclick="saveScore()">Save score</button>
+    </div>
+  </div>
   <div id="animate"></div>
   <div id="ground"></div>
 </div>
 
-<div class="pt-2">
-  <button class="btn btn-primary" onclick="myMove()">Start</button>
-  <button class="btn btn-success" onclick="flap()" style="width:100px">Flap!</button>
-  <button class="btn btn-secondary" onclick="showScore()">Highscore</button>
+<div id="stats">
+  <h5>Stats</h5>
+  <div>Flapppower <span id="flapppower"></span></div>
+  <div>Velocity <span id="velocity"></span></div>
+  <div>Position <span id="position"></span></div>
+  <div>Angle <span id="angle"></span></div>
 </div>
 
-<div>Score: <span id="score"></span></div>
-<div id="dead">
-  You lost!
-  <button id="dead-score" class="btn btn-secondary" onclick="saveScore()">Save score</button>
-</div>
-
-<div id="score-modal" class="modal fade pt-5" tabindex="-1" role="dialog">
+<div id="score-modal" style="z-index:999999999;" class="modal fade pt-5" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -82,7 +134,7 @@ isAuthenticated(function(isAuthenticated) {
   gAuthenticated = isAuthenticated;
 });
 
-$('#dead').hide();
+$('.dead').hide();
 
 function showScore() {
   dsScore.getData();
@@ -129,22 +181,32 @@ function saveScore() {
     dsScore.getData();
   });
 
-  $('#dead').hide();
+  $('.dead').hide();
 }
 
 $('#animate').hide();
+$('#stats').hide();
+
+function showStats() {
+  showStats = true;
+  $('#stats').show()
+}
 
 var elem = document.getElementById("animate");
 var ground = document.getElementById("ground");
 
-// var pipepos = 0;
 var pos = 350;
 var score = 0;
 var scoreint = 0;
 var pipeint = 0;
+var velocity = 0.5;
+var flapppower = 30;
+var angle = 90;
+var showStats = false;
 
 function myMove() {
-  $('#dead').hide();
+  $('#menu').hide();
+  $('.dead').hide();
   $('#animate').show();
 
   $('.pipe').each(function(index, element) {
@@ -152,20 +214,42 @@ function myMove() {
     tContainer.removeChild(element);
   });
 
-  addPipe();
+  $('.gate').each(function(index, element) {
+    let tContainer = document.getElementById("container");
+    tContainer.removeChild(element);
+  });
 
   var id = setInterval(frame, 5);
-  // pipepos = 900;
   pos = 350;
+  pipeint = 0;
+  score = 0;
+  $('.score').text(score);
+
   function frame() {
 
     if (pos == 750) {
       pos = 0
     }
     else {
-      pos++;
+      if (flapppower > 40) {
+        flapppower -= 0.17;
+      }
+      if (angle > -100) {
+        angle += 0.3;
+      }
+      velocity += 0.020;//0.010;
+      pos += velocity;
       scoreint++;
       pipeint++;
+
+      if(showStats) {
+        $('#flapppower').text(flapppower);
+        $('#velocity').text(velocity);
+        $('#position').text(pos);
+        $('#angle').text(angle);
+      }
+
+      $(elem).css({'transform': 'rotate(' + angle +'deg)'});
 
       var tPipeint = getPipeInterval();
       if(pipeint >= tPipeint) {
@@ -173,13 +257,12 @@ function myMove() {
         addPipe();
       }
 
-      if(scoreint == 10) {
-        scoreint = 0;
-        score++;
-        $('#score').text(score);
-      }
-
       elem.style.top = pos + "px";
+
+      if(collide(elem, ground) || collide(elem, sky)) {
+        clearInterval(id);
+        dead();
+      }
 
       $('.pipe').each(function(index, element) {
         var left = $(element).position().left;
@@ -189,12 +272,32 @@ function myMove() {
           dead();
         }
 
-        if(left > -100) {
-          element.style.left = left - 1 + "px";
+        if(collide(element, leftborder)) {
+            let tContainer = document.getElementById("container");
+            tContainer.removeChild(element);
         } else {
+          element.style.left = left - 2.5 + "px";
+        }
+
+        // if(left > -100) {
+        //   element.style.left = left - 2.5 + "px";
+        // } else {
+        //   let tContainer = document.getElementById("container");
+        //   tContainer.removeChild(element);
+        // }
+      });
+
+      $('.gate').each(function(index, element) {
+        var left = $(element).position().left;
+
+        if(collide(elem, element)) {
+          score++;
+          $('#score').text(score);
           let tContainer = document.getElementById("container");
           tContainer.removeChild(element);
         }
+
+        element.style.left = left - 2.5 + "px";
       });
     }
   }
@@ -214,25 +317,29 @@ function addPipe() {
   bottomPipe.style.top = pipeHeight + pipeDistance + "px";
   bottomPipe.style.height = 800 - pipeHeight - pipeDistance + "px";
 
+  var gate = document.createElement("div");
+  gate.classList.add("gate");
+
   $('#container').append(topPipe);
   $('#container').append(bottomPipe);
+  $('#container').append(gate);
 }
 
 function getPipeHeight() {
-  var max = 350;
+  var max = 250;
   var min = 100;
   return Math.random() * (max - min) + min;
 }
 
 function getPipeDistance() {
-  var max = 400;
-  var min = 175;
+  var max = 250;
+  var min = 150;
   return Math.random() * (max - min) + min;
 }
 
 function getPipeInterval() {
-  var max = 500;
-  var min = 300;
+  var max = 300;
+  var min = 150;
   return Math.random() * (max - min) + min;
 }
 
@@ -241,22 +348,35 @@ function collide(el1, el2) {
   var rect2 = el2.getBoundingClientRect();
 
   return !(
-    rect1.top > rect2.bottom ||
-    rect1.right < rect2.left ||
-    rect1.bottom < rect2.top ||
-    rect1.left > rect2.right
+    rect1.top > rect2.bottom - 15 ||
+    rect1.right < rect2.left + 10  ||
+    rect1.bottom < rect2.top + 15 ||
+    rect1.left > rect2.right - 15
   );
 }
 
 $('#dead').hide();
 function dead() {
-  $('#dead').show();
+  $('#menu').fadeIn();
+  $('.dead').show();
   $('#dead-score').show();
 }
 
+$('#container').on('click', function() {
+  flap();
+});
+
 function flap() {
-  pos -= 80;
+  if(flapppower < 100) {
+    flapppower += 20;
+  }
+  if(angle > 90) {
+    angle -= 60;
+  }
+
+  pos -= flapppower;
   gravity = 0;
+  velocity = 0;
 }
 </script>
 {%footer%}
